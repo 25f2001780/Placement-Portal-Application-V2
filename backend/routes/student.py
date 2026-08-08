@@ -163,7 +163,7 @@ def submit_application(id):
 def fetch_my_applications():
     current_uid = get_jwt_identity()
     u_record = User.query.get(current_uid)
-    apps = Application.query.filter_by(student_id=u_record.student_profile_data.id).all()
+    apps = Application.query.filter_by(student_id=u_record.student_profile.id).all()
     
     output_list = []
     for app in apps:

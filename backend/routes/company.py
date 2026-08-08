@@ -26,12 +26,12 @@ def fetch_my_profile():
     profile_data = u_record.company_profile
     return jsonify({
         "name": profile_data.name,
-        "description": profile.description,
-        "hr_name": profile.hr_name,
-        "hr_contact": profile.hr_contact,
-        "website": profile.website,
-        "logo_path": profile.logo_path,
-        "approved": profile.approved
+        "description": profile_data.description,
+        "hr_name": profile_data.hr_name,
+        "hr_contact": profile_data.hr_contact,
+        "website": profile_data.website,
+        "logo_path": profile_data.logo_path,
+        "approved": profile_data.approved
     }), 200
 
 @company_bp.route('/profile', methods=['PUT'])
@@ -47,21 +47,21 @@ def edit_my_profile():
         if 'logo' in request.files:
             file = request.files['logo']
             if file and file.filename != '':
-                filename = secure_filename(f"company_{user.id}_{file.filename}")
+                filename = secure_filename(f"company_{u_record.id}_{file.filename}")
                 BASE_DIR = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
                 file_path = os.path.join(BASE_DIR, 'uploads', filename)
                 file.save(file_path)
-                profile.logo_path = f"/uploads/{filename}"
+                profile_data.logo_path = f"/uploads/{filename}"
     else:
         data = request.json
     
     # update info
     if data:
         if 'name' in data: profile_data.name = data['name']
-        if 'description' in data: profile.description = data['description']
-        if 'hr_name' in data: profile.hr_name = data['hr_name']
-        if 'hr_contact' in data: profile.hr_contact = data['hr_contact']
-        if 'website' in data: profile.website = data['website']
+        if 'description' in data: profile_data.description = data['description']
+        if 'hr_name' in data: profile_data.hr_name = data['hr_name']
+        if 'hr_contact' in data: profile_data.hr_contact = data['hr_contact']
+        if 'website' in data: profile_data.website = data['website']
     
     db.session.commit()
     return jsonify({"msg": "Updated"}), 200
@@ -83,7 +83,7 @@ def load_all_drives():
             "branch_eligibility": pdrive.branch_eligibility,
             "cgpa_cutoff": pdrive.cgpa_cutoff,
             "application_deadline": pdrive.application_deadline.strftime('%Y-%m-%d') if pdrive.application_deadline else None,
-            "status": d.status,
+            "status": pdrive.status,
             "applicant_count": len(pdrive.applications)
         })
     return jsonify(output_list), 200
@@ -175,7 +175,7 @@ def generate_offer_letter(app_id):
 
     s = app.student
     d = app.drive
-    c = pdrive.company
+    c = d.company
 
     # simple html string for offer letter
     html = f"""<!DOCTYPE html>
@@ -207,11 +207,11 @@ def generate_offer_letter(app_id):
     <p><strong>To:</strong> {s.name}</p>
     <p>Dear <span class="highlight">{s.name}</span>,</p>
     <p>We are delighted to inform you that after a thorough evaluation process, you have been
-    <span class="highlight">selected</span> for the position of <span class="highlight">{pdrive.job_title}</span>
+    <span class="highlight">selected</span> for the position of <span class="highlight">{d.job_title}</span>
     at <span class="highlight">{c.name}</span>.</p>
     <p>We are pleased to offer you an annual compensation package of
-    <span class="highlight">{pdrive.package_lpa} LPA</span>
-    {"at our <span class='highlight'>" + pdrive.location + "</span> office" if pdrive.location else ""}.</p>
+    <span class="highlight">{d.package_lpa} LPA</span>
+    {"at our <span class='highlight'>" + d.location + "</span> office" if d.location else ""}.</p>
     <p>Please confirm your acceptance of this offer within 7 days of receiving this letter. We look
     forward to welcoming you to our team and are confident you will make valuable contributions.</p>
     <p>If you have any questions, please do not hesitate to contact our HR department
@@ -234,5 +234,5 @@ def generate_offer_letter(app_id):
     return Response(
         html,
         mimetype='text/html',
-        headers={'Content-Disposition': f'inline; filename=offer_letter_{s.name}_{pdrive.job_title}.html'}
+        headers={'Content-Disposition': f'inline; filename=offer_letter_{s.name}_{d.job_title}.html'}
     )

@@ -222,17 +222,16 @@ def reject_drive(id):
 @admin_only
 def toggle_user(id):
     u_record = User.query.get_or_404(id)
-    if user.role == 'admin':
+    if u_record.role == 'admin':
         return jsonify({"msg": "Cannot toggle admin"}), 400
-    user.active = not user.active
+    u_record.active = not u_record.active
     db.session.commit()
-    
 
     if cache:
         for k in ['admin_stats', 'admin_companies', 'admin_students', 'admin_drives', 'admin_analytics']:
             cache.delete(k)
-            
-    return jsonify({"msg": f"User active status is now {user.active}"}), 200
+
+    return jsonify({"msg": f"User active status is now {u_record.active}"}), 200
 
 @admin_bp.route('/drives/<int:id>/applications', methods=['GET'])
 @admin_only
