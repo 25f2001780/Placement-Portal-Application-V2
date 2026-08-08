@@ -20,12 +20,12 @@ def company_only(fn):
 
 @company_bp.route('/profile', methods=['GET'])
 @company_only
-def get_profile():
-    identity = get_jwt_identity()
-    user = User.query.get(identity)
-    profile = user.company_profile
+def fetch_my_profile():
+    current_uid = get_jwt_identity()
+    u_record = User.query.get(current_uid)
+    profile_data = u_recorpdrive.company_profile
     return jsonify({
-        "name": profile.name,
+        "name": profile_data.name,
         "description": profile.description,
         "hr_name": profile.hr_name,
         "hr_contact": profile.hr_contact,
@@ -36,10 +36,10 @@ def get_profile():
 
 @company_bp.route('/profile', methods=['PUT'])
 @company_only
-def update_profile():
-    identity = get_jwt_identity()
-    user = User.query.get(identity)
-    profile = user.company_profile
+def edit_my_profile():
+    current_uid = get_jwt_identity()
+    u_record = User.query.get(current_uid)
+    profile_data = u_recorpdrive.company_profile
     
     # check for logo upload
     if request.content_type and 'multipart/form-data' in request.content_type:
@@ -57,7 +57,7 @@ def update_profile():
     
     # update info
     if data:
-        if 'name' in data: profile.name = data['name']
+        if 'name' in data: profile_data.name = data['name']
         if 'description' in data: profile.description = data['description']
         if 'hr_name' in data: profile.hr_name = data['hr_name']
         if 'hr_contact' in data: profile.hr_contact = data['hr_contact']
@@ -68,31 +68,31 @@ def update_profile():
 
 @company_bp.route('/drives', methods=['GET'])
 @company_only
-def get_drives():
-    identity = get_jwt_identity()
-    user = User.query.get(identity)
-    drives = PlacementDrive.query.filter_by(company_id=user.company_profile.id).all()
-    res = []
-    for d in drives:
-        res.append({
-            "id": d.id,
-            "job_title": d.job_title,
-            "description": d.description,
-            "package_lpa": d.package_lpa,
-            "location": d.location,
-            "branch_eligibility": d.branch_eligibility,
-            "cgpa_cutoff": d.cgpa_cutoff,
-            "application_deadline": d.application_deadline.strftime('%Y-%m-%d') if d.application_deadline else None,
+def load_all_drives():
+    current_uid = get_jwt_identity()
+    u_record = User.query.get(current_uid)
+    placements = PlacementDrive.query.filter_by(company_id=u_recorpdrive.company_profile_data.id).all()
+    output_list = []
+    for pdrive in placements:
+        output_list.append({
+            "id": pdrive.id,
+            "job_title": pdrive.job_title,
+            "description": pdrive.description,
+            "package_lpa": pdrive.package_lpa,
+            "location": pdrive.location,
+            "branch_eligibility": pdrive.branch_eligibility,
+            "cgpa_cutoff": pdrive.cgpa_cutoff,
+            "application_deadline": pdrive.application_deadline.strftime('%Y-%m-%d') if pdrive.application_deadline else None,
             "status": d.status,
-            "applicant_count": len(d.applications)
+            "applicant_count": len(pdrive.applications)
         })
-    return jsonify(res), 200
+    return jsonify(output_list), 200
 
 @company_bp.route('/drives', methods=['POST'])
 @company_only
-def create_drive():
-    identity = get_jwt_identity()
-    user = User.query.get(identity)
+def add_new_drive():
+    current_uid = get_jwt_identity()
+    u_record = User.query.get(current_uid)
     data = request.json
     
     deadline_str = data.get('application_deadline')
@@ -102,7 +102,7 @@ def create_drive():
         return jsonify({"msg": "Deadline must be in future"}), 400
         
     new_drive = PlacementDrive(
-        company_id=user.company_profile.id,
+        company_id=u_recorpdrive.company_profile_data.id,
         job_title=data.get('job_title'),
         description=data.get('description'),
         package_lpa=data.get('package_lpa'),
@@ -118,17 +118,17 @@ def create_drive():
 @company_bp.route('/drives/<int:id>/applications', methods=['GET'])
 @company_only
 def get_applications(id):
-    identity = get_jwt_identity()
-    user = User.query.get(identity)
+    current_uid = get_jwt_identity()
+    u_record = User.query.get(current_uid)
     drive = PlacementDrive.query.get_or_404(id)
     
-    if drive.company_id != user.company_profile.id:
+    if drive.company_id != u_recorpdrive.company_profile_data.id:
         return jsonify({"msg": "Unauthorized"}), 403
         
-    res = []
+    output_list = []
     for app in drive.applications:
         s = app.student
-        res.append({
+        output_list.append({
             "application_id": app.id,
             "student_name": s.name,
             "branch": s.branch,
@@ -139,16 +139,16 @@ def get_applications(id):
             "status": app.status,
             "application_date": app.application_date
         })
-    return jsonify(res), 200
+    return jsonify(output_list), 200
 
 @company_bp.route('/applications/<int:id>/status', methods=['POST'])
 @company_only
 def update_app_status(id):
-    identity = get_jwt_identity()
-    user = User.query.get(identity)
+    current_uid = get_jwt_identity()
+    u_record = User.query.get(current_uid)
     app = Application.query.get_or_404(id)
     
-    if app.drive.company_id != user.company_profile.id:
+    if app.drive.company_id != u_recorpdrive.company_profile_data.id:
         return jsonify({"msg": "Unauthorized"}), 403
         
     data = request.json
@@ -163,11 +163,11 @@ def update_app_status(id):
 @company_only
 def generate_offer_letter(app_id):
     # make offer letter for selected student
-    identity = get_jwt_identity()
-    user = User.query.get(identity)
+    current_uid = get_jwt_identity()
+    u_record = User.query.get(current_uid)
     app = Application.query.get_or_404(app_id)
 
-    if app.drive.company_id != user.company_profile.id:
+    if app.drive.company_id != u_recorpdrive.company_profile_data.id:
         return jsonify({"msg": "Unauthorized"}), 403
 
     if app.status != 'Selected':
@@ -175,7 +175,7 @@ def generate_offer_letter(app_id):
 
     s = app.student
     d = app.drive
-    c = d.company
+    c = pdrive.company
 
     # simple html string for offer letter
     html = f"""<!DOCTYPE html>
@@ -207,11 +207,11 @@ def generate_offer_letter(app_id):
     <p><strong>To:</strong> {s.name}</p>
     <p>Dear <span class="highlight">{s.name}</span>,</p>
     <p>We are delighted to inform you that after a thorough evaluation process, you have been
-    <span class="highlight">selected</span> for the position of <span class="highlight">{d.job_title}</span>
+    <span class="highlight">selected</span> for the position of <span class="highlight">{pdrive.job_title}</span>
     at <span class="highlight">{c.name}</span>.</p>
     <p>We are pleased to offer you an annual compensation package of
-    <span class="highlight">{d.package_lpa} LPA</span>
-    {"at our <span class='highlight'>" + d.location + "</span> office" if d.location else ""}.</p>
+    <span class="highlight">{pdrive.package_lpa} LPA</span>
+    {"at our <span class='highlight'>" + pdrive.location + "</span> office" if pdrive.location else ""}.</p>
     <p>Please confirm your acceptance of this offer within 7 days of receiving this letter. We look
     forward to welcoming you to our team and are confident you will make valuable contributions.</p>
     <p>If you have any questions, please do not hesitate to contact our HR department
@@ -234,5 +234,5 @@ def generate_offer_letter(app_id):
     return Response(
         html,
         mimetype='text/html',
-        headers={'Content-Disposition': f'inline; filename=offer_letter_{s.name}_{d.job_title}.html'}
+        headers={'Content-Disposition': f'inline; filename=offer_letter_{s.name}_{pdrive.job_title}.html'}
     )

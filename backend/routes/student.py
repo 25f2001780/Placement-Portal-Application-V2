@@ -23,26 +23,26 @@ def student_only(fn):
 
 @student_bp.route('/profile', methods=['GET'])
 @student_only
-def get_profile():
-    identity = get_jwt_identity()
-    user = User.query.get(identity)
-    profile = user.student_profile
+def fetch_my_profile():
+    current_uid = get_jwt_identity()
+    u_record = User.query.get(current_uid)
+    profile_data = u_record.student_profile
     return jsonify({
-        "name": profile.name,
-        "branch": profile.branch,
-        "cgpa": profile.cgpa,
-        "year": profile.year,
-        "resume_link": profile.resume_link,
-        "resume_file_path": profile.resume_file_path,
-        "profile_photo_path": profile.profile_photo_path
+        "name": profile_data.name,
+        "branch": profile_data.branch,
+        "cgpa": profile_data.cgpa,
+        "year": profile_data.year,
+        "resume_link": profile_data.resume_link,
+        "resume_file_path": profile_data.resume_file_path,
+        "profile_photo_path": profile_data.profile_photo_path
     }), 200
 
 @student_bp.route('/profile', methods=['PUT'])
 @student_only
-def update_profile():
-    identity = get_jwt_identity()
-    user = User.query.get(identity)
-    profile = user.student_profile
+def edit_my_profile():
+    current_uid = get_jwt_identity()
+    u_record = User.query.get(current_uid)
+    profile_data = u_record.student_profile
     
     # check if they are uploading files
     if request.content_type and 'multipart/form-data' in request.content_type:
@@ -56,7 +56,7 @@ def update_profile():
                 filename = secure_filename(f"student_photo_{user.id}_{file.filename}")
                 file_path = os.path.join(BASE_DIR, 'uploads', filename)
                 file.save(file_path)
-                profile.profile_photo_path = f"/uploads/{filename}"
+                profile_data.profile_photo_path = f"/uploads/{filename}"
                 
         # save resume
         if 'resume' in request.files:
@@ -65,72 +65,72 @@ def update_profile():
                 filename = secure_filename(f"student_resume_{user.id}_{file.filename}")
                 file_path = os.path.join(BASE_DIR, 'uploads', filename)
                 file.save(file_path)
-                profile.resume_file_path = f"/uploads/{filename}"
+                profile_data.resume_file_path = f"/uploads/{filename}"
     else:
         data = request.json
     
     # update fields if they exist
     if data:
-        if 'name' in data: profile.name = data['name']
-        if 'branch' in data: profile.branch = data['branch']
-        if 'cgpa' in data: profile.cgpa = data['cgpa']
-        if 'year' in data: profile.year = data['year']
-        if 'resume_link' in data: profile.resume_link = data['resume_link']
+        if 'name' in data: profile_data.name = data['name']
+        if 'branch' in data: profile_data.branch = data['branch']
+        if 'cgpa' in data: profile_data.cgpa = data['cgpa']
+        if 'year' in data: profile_data.year = data['year']
+        if 'resume_link' in data: profile_data.resume_link = data['resume_link']
     
     db.session.commit()
     return jsonify({"msg": "Updated"}), 200
 
 @student_bp.route('/drives', methods=['GET'])
 @student_only
-def get_drives():
-    identity = get_jwt_identity()
-    user = User.query.get(identity)
-    profile = user.student_profile
+def load_all_drives():
+    current_uid = get_jwt_identity()
+    u_record = User.query.get(current_uid)
+    profile_data = u_record.student_profile
     
     # get drives that are not expired and approved
-    today = datetime.now().date()
-    drives = PlacementDrive.query.filter(
+    curr_date = datetime.now().date()
+    placements = PlacementDrive.query.filter(
         PlacementDrive.status == 'Approved',
-        PlacementDrive.application_deadline >= today
+        PlacementDrive.application_deadline >= curr_date
     ).all()
     
-    res = []
-    for d in drives:
+    output_list = []
+    for pdrive in placements:
         eligible = True
-        if d.cgpa_cutoff > (profile.cgpa or 0):
+        if pdrive.cgpa_cutoff > (profile_data.cgpa or 0):
             eligible = False
-        if d.branch_eligibility:
-            branches = [b.strip() for b in d.branch_eligibility.split(',')]
-            if profile.branch not in branches:
+        if pdrive.branch_eligibility:
+            branches = [b.strip() for b in pdrive.branch_eligibility.split(',')]
+            if profile_data.branch not in branches:
                 eligible = False
 
         # skip drives the student isn't eligible for
         if not eligible:
             continue
 
-        applied = any(a.student_id == profile.id for a in d.applications)
+        applied = any(a.student_id == profile_data.id for a in pdrive.applications)
 
-        res.append({
-            "id": d.id,
-            "company_name": d.company.name,
-            "company_logo": d.company.logo_path,
-            "job_title": d.job_title,
-            "description": d.description,
-            "package_lpa": d.package_lpa,
-            "location": d.location,
-            "cgpa_cutoff": d.cgpa_cutoff,
-            "branch_eligibility": d.branch_eligibility,
-            "application_deadline": d.application_deadline.strftime('%Y-%m-%d'),
+        output_list.append({
+            "id": pdrive.id,
+            "company_name": pdrive.company.name,
+            "company_logo": pdrive.company.logo_path,
+            "job_title": pdrive.job_title,
+            "description": pdrive.description,
+            "package_lpa": pdrive.package_lpa,
+            "location": pdrive.location,
+            "cgpa_cutoff": pdrive.cgpa_cutoff,
+            "branch_eligibility": pdrive.branch_eligibility,
+            "application_deadline": pdrive.application_deadline.strftime('%Y-%m-%d'),
             "applied": applied
         })
-    return jsonify(res), 200
+    return jsonify(output_list), 200
 
 @student_bp.route('/drives/<int:id>/apply', methods=['POST'])
 @student_only
-def apply_drive(id):
-    identity = get_jwt_identity()
-    user = User.query.get(identity)
-    profile = user.student_profile
+def submit_application(id):
+    current_uid = get_jwt_identity()
+    u_record = User.query.get(current_uid)
+    profile_data = u_record.student_profile
     
     drive = PlacementDrive.query.get_or_404(id)
     
@@ -140,34 +140,34 @@ def apply_drive(id):
     if drive.application_deadline < datetime.now().date():
         return jsonify({"msg": "Deadline passed"}), 400
         
-    if drive.cgpa_cutoff > (profile.cgpa or 0):
+    if drive.cgpa_cutoff > (profile_data.cgpa or 0):
         return jsonify({"msg": "Not eligible by CGPA"}), 400
         
     if drive.branch_eligibility:
         branches = [b.strip() for b in drive.branch_eligibility.split(',')]
-        if profile.branch not in branches:
+        if profile_data.branch not in branches:
             return jsonify({"msg": "Not eligible by branch"}), 400
             
     # check if they already applied
-    existing = Application.query.filter_by(student_id=profile.id, drive_id=id).first()
+    existing = Application.query.filter_by(student_id=profile_data.id, drive_id=id).first()
     if existing:
         return jsonify({"msg": "Already applied"}), 400
         
-    app = Application(student_id=profile.id, drive_id=id)
+    app = Application(student_id=profile_data.id, drive_id=id)
     db.session.add(app)
     db.session.commit()
     return jsonify({"msg": "Applied successfully"}), 201
 
 @student_bp.route('/applications', methods=['GET'])
 @student_only
-def get_applications():
-    identity = get_jwt_identity()
-    user = User.query.get(identity)
-    apps = Application.query.filter_by(student_id=user.student_profile.id).all()
+def fetch_my_applications():
+    current_uid = get_jwt_identity()
+    u_record = User.query.get(current_uid)
+    apps = Application.query.filter_by(student_id=u_record.student_profile_data.id).all()
     
-    res = []
+    output_list = []
     for app in apps:
-        res.append({
+        output_list.append({
             "id": app.id,
             "company_name": app.drive.company.name,
             "job_title": app.drive.job_title,
@@ -175,18 +175,18 @@ def get_applications():
             "status": app.status,
             "application_date": app.application_date.strftime('%Y-%m-%d')
         })
-    return jsonify(res), 200
+    return jsonify(output_list), 200
 
 @student_bp.route('/export-csv', methods=['POST'])
 @student_only
-def export_csv():
+def download_student_csv():
     # queue async celery job
-    identity = get_jwt_identity()
-    user = User.query.get(identity)
-    profile = user.student_profile
+    current_uid = get_jwt_identity()
+    u_record = User.query.get(current_uid)
+    profile_data = u_record.student_profile
 
-    from tasks.celery_tasks import export_student_history_csv
-    task = export_student_history_csv.delay(profile.id)
+    from tasks.celery_tasks import export_student_history_csv as dl_csv_task
+    task = dl_csv_task.delay(profile_data.id)
     return jsonify({"task_id": task.id}), 202
 
 @student_bp.route('/export-csv/status/<task_id>', methods=['GET'])

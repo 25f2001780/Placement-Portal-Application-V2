@@ -686,7 +686,7 @@ export default {
       } catch (err) { console.error(err); }
     },
     
-    async fetchDrives() {
+    async getAllPlacements() {
       try {
         const res = await axios.get('/api/admin/drives');
         this.drives = res.data;
@@ -727,7 +727,7 @@ export default {
     async approveDrive(id) {
       try {
         await axios.post(`/api/admin/drives/${id}/approve`);
-        this.fetchDrives();
+        this.getAllPlacements();
         this.fetchStats();
       } catch (err) { alert(err.response?.data?.msg || 'Error'); }
     },
@@ -735,7 +735,7 @@ export default {
     async rejectDrive(id) {
       try {
         await axios.post(`/api/admin/drives/${id}/reject`);
-        this.fetchDrives();
+        this.getAllPlacements();
         this.fetchStats();
       } catch (err) { alert(err.response?.data?.msg || 'Error'); }
     },
@@ -743,7 +743,7 @@ export default {
     async unapproveDrive(id) {
       try {
         await axios.post(`/api/admin/drives/${id}/unapprove`);
-        this.fetchDrives();
+        this.getAllPlacements();
         this.fetchStats();
       } catch (err) { alert(err.response?.data?.msg || 'Error'); }
     },
@@ -896,7 +896,7 @@ export default {
       if (val === 'overview') this.fetchStats();
       if (val === 'companies') this.fetchCompanies();
       if (val === 'students') this.fetchStudents();
-      if (val === 'drives') this.fetchDrives();
+      if (val === 'drives') this.getAllPlacements();
       if (val === 'analytics') this.fetchAnalytics();
       if (val === 'settings') this.fetchSettings();
     }

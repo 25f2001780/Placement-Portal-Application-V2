@@ -83,10 +83,10 @@ export default {
     }
   },
   mounted() {
-    this.fetchProfile();
+    this.loadMyData();
   },
   methods: {
-    async fetchProfile() {
+    async loadMyData() {
       try {
         const res = await axios.get('/api/student/profile');
         this.form.name = res.data.name || '';
@@ -100,7 +100,7 @@ export default {
         this.loadingData = false;
       }
     },
-    async updateProfile() {
+    async saveMyData() {
       this.saving = true;
       this.error = '';
       this.success = '';

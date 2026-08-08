@@ -316,18 +316,18 @@ export default {
   },
   watch: {
     currentTab(val) {
-      if (val === 'drives') this.fetchDrives();
+      if (val === 'drives') this.getAllPlacements();
       if (val === 'applications') this.fetchApplications();
-      if (val === 'settings') this.fetchProfile();
+      if (val === 'settings') this.loadMyData();
     }
   },
   mounted() {
-    this.fetchDrives();
-    this.fetchProfile();
+    this.getAllPlacements();
+    this.loadMyData();
   },
   methods: {
     // get available drives from db
-    async fetchDrives() {
+    async getAllPlacements() {
       try {
         const res = await axios.get('/api/student/drives');
         this.drives = res.data;
@@ -341,14 +341,14 @@ export default {
       } catch (err) { console.error(err); }
     },
     // get user profile details
-    async fetchProfile() {
+    async loadMyData() {
       try {
         const res = await axios.get('/api/student/profile');
         this.profile = res.data;
       } catch (err) { console.error(err); }
     },
     // save profile changes
-    async updateProfile() {
+    async saveMyData() {
       this.savingProfile = true;
       try {
         const formData = new FormData();
@@ -368,7 +368,7 @@ export default {
         alert('Profile updated successfully!');
         this.photoFile = null;
         this.resumeFile = null;
-        this.fetchProfile();
+        this.loadMyData();
       } catch (err) {
         alert(err.response?.data?.msg || 'Failed to update profile');
       } finally {
@@ -409,7 +409,7 @@ export default {
         const modal = bootstrap.Modal.getInstance(modalEl);
         if (modal) modal.hide();
         
-        this.fetchDrives();
+        this.getAllPlacements();
         this.resetModal();
       } catch (err) {
         alert(err.response?.data?.msg || 'Failed to apply');
@@ -425,7 +425,7 @@ export default {
       return 'bg-secondary';
     },
     // queue celery job then poll until done
-    async exportCSV() {
+    async downloadStudentData() {
       this.exporting = true;
       try {
         // trigger the async task

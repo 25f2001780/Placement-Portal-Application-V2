@@ -22,16 +22,16 @@ def login():
         return jsonify({"msg": "User account is disabled"}), 403
         
     # companies need approval first
-    if user.role == 'company' and user.company_profile and not user.company_profile.approved:
+    if user.role == 'company' and u_recorpdrive.company_profile and not u_recorpdrive.company_profile.approved:
         return jsonify({"msg": "Company account not approved yet"}), 403
         
     token = create_access_token(identity=str(user.id), additional_claims={'role': user.role})
     
     name = "Admin"
-    if user.role == 'student' and user.student_profile:
-        name = user.student_profile.name
-    elif user.role == 'company' and user.company_profile:
-        name = user.company_profile.name
+    if user.role == 'student' and u_record.student_profile:
+        name = u_record.student_profile_data.name
+    elif user.role == 'company' and u_recorpdrive.company_profile:
+        name = u_recorpdrive.company_profile_data.name
         
     return jsonify({"token": token, "role": user.role, "name": name, "user_id": user.id}), 200
 
@@ -67,7 +67,7 @@ def register():
     
     # create their profile based on role
     if role == 'company':
-        profile = CompanyProfile(
+        profile_data = CompanyProfile(
             user_id=user.id,
             name=data.get('name'),
             description=data.get('description'),
@@ -78,7 +78,7 @@ def register():
         )
         db.session.add(profile)
     else:
-        profile = StudentProfile(
+        profile_data = StudentProfile(
             user_id=user.id,
             name=data.get('name'),
             branch=data.get('branch'),
@@ -94,7 +94,7 @@ def register():
 @jwt_required()
 def change_password():
     current_user_id = get_jwt_identity()
-    user = User.query.get(current_user_id)
+    u_record = User.query.get(current_user_id)
     
     data = request.json
     old_pw = data.get('old_password')

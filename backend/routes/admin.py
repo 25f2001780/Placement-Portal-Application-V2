@@ -31,8 +31,8 @@ def get_stats():
     total_students = StudentProfile.query.count()
     total_companies = CompanyProfile.query.count()
     approved_companies = CompanyProfile.query.filter_by(approved=True).count()
-    total_drives = PlacementDrive.query.count()
-    approved_drives = PlacementDrive.query.filter_by(status='Approved').count()
+    total_placements = PlacementDrive.query.count()
+    approved_placements = PlacementDrive.query.filter_by(status='Approved').count()
     total_applications = Application.query.count()
     selected_students = Application.query.filter_by(status='Selected').count()
     
@@ -49,7 +49,7 @@ def get_stats():
     if cache:
         cache.set('admin_stats', res, timeout=120)
 
-    return jsonify(res), 200
+    return jsonify(output_list), 200
 
 @admin_bp.route('/companies', methods=['GET'])
 @admin_only
@@ -60,10 +60,10 @@ def get_companies():
         return jsonify(cached), 200
 
     companies = CompanyProfile.query.all()
-    res = []
+    output_list = []
     # loop through companies
     for c in companies:
-        res.append({
+        output_list.append({
             "id": c.id,
             "user_id": c.user_id,
             "name": c.name,
@@ -80,7 +80,7 @@ def get_companies():
     if cache:
         cache.set('admin_companies', res, timeout=120)
 
-    return jsonify(res), 200
+    return jsonify(output_list), 200
 
 @admin_bp.route('/companies/<int:id>/approve', methods=['POST'])
 @admin_only
@@ -123,9 +123,9 @@ def get_students():
 
     # get all students
     students = StudentProfile.query.all()
-    res = []
+    output_list = []
     for s in students:
-        res.append({
+        output_list.append({
             "id": s.id,
             "user_id": s.user_id,
             "name": s.name,
@@ -143,38 +143,38 @@ def get_students():
     if cache:
         cache.set('admin_students', res, timeout=120)
 
-    return jsonify(res), 200
+    return jsonify(output_list), 200
 
 @admin_bp.route('/drives', methods=['GET'])
 @admin_only
-def get_drives():
+def load_all_drives():
 
     cached = cache.get('admin_drives') if cache else None
     if cached:
         return jsonify(cached), 200
 
-    drives = PlacementDrive.query.all()
-    res = []
-    for d in drives:
-        res.append({
-            "id": d.id,
-            "job_title": d.job_title,
-            "company_name": d.company.name,
-            "company_logo": d.company.logo_path,
-            "description": d.description,
-            "location": d.location,
-            "branch_eligibility": d.branch_eligibility,
-            "cgpa_cutoff": d.cgpa_cutoff,
-            "package_lpa": d.package_lpa,
-            "application_deadline": d.application_deadline.strftime('%Y-%m-%d') if d.application_deadline else None,
+    placements = PlacementDrive.query.all()
+    output_list = []
+    for pdrive in placements:
+        output_list.append({
+            "id": pdrive.id,
+            "job_title": pdrive.job_title,
+            "company_name": pdrive.company.name,
+            "company_logo": pdrive.company.logo_path,
+            "description": pdrive.description,
+            "location": pdrive.location,
+            "branch_eligibility": pdrive.branch_eligibility,
+            "cgpa_cutoff": pdrive.cgpa_cutoff,
+            "package_lpa": pdrive.package_lpa,
+            "application_deadline": pdrive.application_deadline.strftime('%Y-%m-%d') if pdrive.application_deadline else None,
             "status": d.status,
-            "applicant_count": len(d.applications)
+            "applicant_count": len(pdrive.applications)
         })
 
     if cache:
         cache.set('admin_drives', res, timeout=120)
 
-    return jsonify(res), 200
+    return jsonify(output_list), 200
 
 @admin_bp.route('/drives/<int:id>/approve', methods=['POST'])
 @admin_only
@@ -222,7 +222,7 @@ def reject_drive(id):
 @admin_bp.route('/users/<int:id>/toggle', methods=['POST'])
 @admin_only
 def toggle_user(id):
-    user = User.query.get_or_404(id)
+    u_record = User.query.get_or_404(id)
     if user.role == 'admin':
         return jsonify({"msg": "Cannot toggle admin"}), 400
     user.active = not user.active
@@ -239,10 +239,10 @@ def toggle_user(id):
 @admin_only
 def get_applications(id):
     drive = PlacementDrive.query.get_or_404(id)
-    res = []
+    output_list = []
     for app in drive.applications:
         student = app.student
-        res.append({
+        output_list.append({
             "application_id": app.id,
             "student_name": student.name,
             "branch": student.branch,
@@ -253,7 +253,7 @@ def get_applications(id):
             "status": app.status,
             "application_date": app.application_date.strftime('%Y-%m-%d')
         })
-    return jsonify(res), 200
+    return jsonify(output_list), 200
 
 # for chartjs on the dashboard
 @admin_bp.route('/analytics', methods=['GET'])
@@ -272,15 +272,15 @@ def get_analytics():
         branch_app_counts[branch] = branch_app_counts.get(branch, 0) + app_count
 
     drive_statuses = {'Approved': 0, 'Pending': 0, 'Rejected': 0}
-    drives = PlacementDrive.query.all()
-    for d in drives:
+    placements = PlacementDrive.query.all()
+    for pdrive in placements:
         if d.status in drive_statuses:
             drive_statuses[d.status] += 1
 
     company_apps = {}
-    for d in drives:
-        name = d.company.name
-        count = len(d.applications)
+    for pdrive in placements:
+        name = pdrive.company.name
+        count = len(pdrive.applications)
         company_apps[name] = company_apps.get(name, 0) + count
 
     total_apps = Application.query.count()
@@ -311,7 +311,7 @@ def get_analytics():
     if cache:
         cache.set('admin_analytics', res, timeout=120)
 
-    return jsonify(res), 200
+    return jsonify(output_list), 200
 
 @admin_bp.route('/settings', methods=['GET', 'POST'])
 @admin_only

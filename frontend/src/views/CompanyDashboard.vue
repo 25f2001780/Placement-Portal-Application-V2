@@ -361,17 +361,17 @@ export default {
   },
   watch: {
     currentTab(val) {
-      if (val === 'overview' || val === 'drives') this.fetchDrives();
-      if (val === 'settings') this.fetchProfile();
+      if (val === 'overview' || val === 'drives') this.getAllPlacements();
+      if (val === 'settings') this.loadMyData();
     }
   },
   mounted() {
-    this.fetchDrives();
-    this.fetchProfile();
+    this.getAllPlacements();
+    this.loadMyData();
   },
   methods: {
     // get all drives for this company
-    async fetchDrives() {
+    async getAllPlacements() {
       try {
         const res = await axios.get('/api/company/drives');
         this.drives = res.data;
@@ -379,7 +379,7 @@ export default {
     },
     
     // get profile info
-    async fetchProfile() {
+    async loadMyData() {
       try {
         const res = await axios.get('/api/company/profile');
         this.profile = res.data;
@@ -387,7 +387,7 @@ export default {
     },
     
     // update company profile
-    async updateProfile() {
+    async saveMyData() {
       this.savingProfile = true;
       try {
         const formData = new FormData();
@@ -405,7 +405,7 @@ export default {
         
         alert('Profile updated successfully!');
         this.logoFile = null;
-        this.fetchProfile();
+        this.loadMyData();
       } catch (err) {
         alert(err.response?.data?.msg || 'Failed to update profile');
       } finally {
@@ -429,7 +429,7 @@ export default {
     },
     
     // post a new drive
-    async createDrive() {
+    async addNewPlacement() {
       this.driveLoading = true;
       this.driveMsg = '';
       this.driveErr = '';
@@ -447,7 +447,7 @@ export default {
         await axios.post('/api/company/drives', payload);
         this.driveMsg = "Drive created successfully! Pending admin approval.";
         this.newDrive = { job_title: '', description: '', package_lpa: '', location: '', branch_eligibility: '', cgpa_cutoff: 0, application_deadline: '' };
-        this.fetchDrives();
+        this.getAllPlacements();
       } catch (err) {
         this.driveErr = err.response?.data?.msg || 'Failed to create drive.';
       } finally {
