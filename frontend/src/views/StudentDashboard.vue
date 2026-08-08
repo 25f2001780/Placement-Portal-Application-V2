@@ -427,48 +427,31 @@ export default {
       if (status === 'Rejected') return 'bg-danger';
       return 'bg-secondary';
     },
-    // trigger batch job and poll for csv
+    // download csv file directly from backend
     async exportCSV() {
       this.exporting = true;
       try {
-        const res = await axios.post('/api/student/export-csv');
-        const taskId = res.data.task_id;
-        
-        // start polling
-        const poll = setInterval(async () => {
-          try {
-            const statusRes = await axios.get(`/api/student/export-csv/status/${taskId}`);
-            const state = statusRes.data.state;
-            
-            if (state === 'SUCCESS') {
-              clearInterval(poll);
-              this.exporting = false;
-              
-              alert('Export completed successfully! Downloading now...');
-              
-              // trigger download
-              const fileUrl = statusRes.data.result.filepath;
-              const link = document.createElement('a');
-              link.href = fileUrl;
-              link.setAttribute('download', statusRes.data.result.filename);
-              document.body.appendChild(link);
-              link.click();
-              link.remove();
-            } else if (state === 'FAILURE' || state === 'REVOKED') {
-              clearInterval(poll);
-              this.exporting = false;
-              alert('Failed to generate export file.');
-            }
-          } catch (e) {
-            clearInterval(poll);
-            this.exporting = false;
-            console.error('Polling error', e);
-          }
-        }, 2000); // check every 2 seconds
-        
+        // use axios so JWT header is included, get back as blob
+        const res = await axios.get('/api/student/export-csv', { responseType: 'blob' });
+
+        // create a temporary download link and click it
+        const url = window.URL.createObjectURL(new Blob([res.data]));
+        const link = document.createElement('a');
+        link.href = url;
+        const disposition = res.headers['content-disposition'];
+        const filename = disposition
+          ? disposition.split('filename=')[1].replace(/"/g, '')
+          : 'applications.csv';
+        link.setAttribute('download', filename);
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        window.URL.revokeObjectURL(url);
       } catch (err) {
+        alert('Failed to export CSV. Make sure you have applications first.');
+        console.error(err);
+      } finally {
         this.exporting = false;
-        alert('Failed to trigger export batch job');
       }
     }
   }
