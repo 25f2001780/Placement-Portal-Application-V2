@@ -260,9 +260,6 @@
                 <button v-if="selectedDrive.applied" class="btn btn-success w-100" disabled>
                   <i class="bi bi-check-circle me-1"></i> You Have Already Applied
                 </button>
-                <button v-else-if="!selectedDrive.eligible" class="btn btn-outline-danger w-100" disabled>
-                  <i class="bi bi-x-circle me-1"></i> You Are Not Eligible For This Drive
-                </button>
                 <button v-else class="btn btn-primary w-100 btn-lg shadow-sm" @click="confirmApplyState = true">
                   <i class="bi bi-send me-1"></i> Apply Now
                 </button>

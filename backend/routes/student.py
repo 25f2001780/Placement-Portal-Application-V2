@@ -103,9 +103,13 @@ def get_drives():
             branches = [b.strip() for b in d.branch_eligibility.split(',')]
             if profile.branch not in branches:
                 eligible = False
-                
+
+        # skip drives the student isn't eligible for
+        if not eligible:
+            continue
+
         applied = any(a.student_id == profile.id for a in d.applications)
-        
+
         res.append({
             "id": d.id,
             "company_name": d.company.name,
@@ -117,7 +121,6 @@ def get_drives():
             "cgpa_cutoff": d.cgpa_cutoff,
             "branch_eligibility": d.branch_eligibility,
             "application_deadline": d.application_deadline.strftime('%Y-%m-%d'),
-            "eligible": eligible,
             "applied": applied
         })
     return jsonify(res), 200
