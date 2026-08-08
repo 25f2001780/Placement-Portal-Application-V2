@@ -53,7 +53,7 @@ def edit_my_profile():
         if 'photo' in request.files:
             file = request.files['photo']
             if file and file.filename != '':
-                filename = secure_filename(f"student_photo_{user.id}_{file.filename}")
+                filename = secure_filename(f"student_photo_{u_record.id}_{file.filename}")
                 file_path = os.path.join(BASE_DIR, 'uploads', filename)
                 file.save(file_path)
                 profile_data.profile_photo_path = f"/uploads/{filename}"
@@ -62,7 +62,7 @@ def edit_my_profile():
         if 'resume' in request.files:
             file = request.files['resume']
             if file and file.filename != '':
-                filename = secure_filename(f"student_resume_{user.id}_{file.filename}")
+                filename = secure_filename(f"student_resume_{u_record.id}_{file.filename}")
                 file_path = os.path.join(BASE_DIR, 'uploads', filename)
                 file.save(file_path)
                 profile_data.resume_file_path = f"/uploads/{filename}"
