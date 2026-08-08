@@ -35,13 +35,12 @@ def get_stats():
     approved_placements = PlacementDrive.query.filter_by(status='Approved').count()
     total_applications = Application.query.count()
     selected_students = Application.query.filter_by(status='Selected').count()
-    
     res = {
         "total_students": total_students,
         "total_companies": total_companies,
         "approved_companies": approved_companies,
-        "total_drives": total_drives,
-        "approved_drives": approved_drives,
+        "total_drives": total_placements,
+        "approved_drives": approved_placements,
         "total_applications": total_applications,
         "selected_students": selected_students
     }
@@ -49,7 +48,7 @@ def get_stats():
     if cache:
         cache.set('admin_stats', res, timeout=120)
 
-    return jsonify(output_list), 200
+    return jsonify(res), 200
 
 @admin_bp.route('/companies', methods=['GET'])
 @admin_only
@@ -78,7 +77,7 @@ def get_companies():
         })
 
     if cache:
-        cache.set('admin_companies', res, timeout=120)
+        cache.set('admin_companies', output_list, timeout=120)
 
     return jsonify(output_list), 200
 
@@ -141,7 +140,7 @@ def get_students():
         })
 
     if cache:
-        cache.set('admin_students', res, timeout=120)
+        cache.set('admin_students', output_list, timeout=120)
 
     return jsonify(output_list), 200
 
@@ -167,12 +166,12 @@ def load_all_drives():
             "cgpa_cutoff": pdrive.cgpa_cutoff,
             "package_lpa": pdrive.package_lpa,
             "application_deadline": pdrive.application_deadline.strftime('%Y-%m-%d') if pdrive.application_deadline else None,
-            "status": d.status,
+            "status": pdrive.status,
             "applicant_count": len(pdrive.applications)
         })
 
     if cache:
-        cache.set('admin_drives', res, timeout=120)
+        cache.set('admin_drives', output_list, timeout=120)
 
     return jsonify(output_list), 200
 
@@ -274,8 +273,8 @@ def get_analytics():
     drive_statuses = {'Approved': 0, 'Pending': 0, 'Rejected': 0}
     placements = PlacementDrive.query.all()
     for pdrive in placements:
-        if d.status in drive_statuses:
-            drive_statuses[d.status] += 1
+        if pdrive.status in drive_statuses:
+            drive_statuses[pdrive.status] += 1
 
     company_apps = {}
     for pdrive in placements:
@@ -311,7 +310,7 @@ def get_analytics():
     if cache:
         cache.set('admin_analytics', res, timeout=120)
 
-    return jsonify(output_list), 200
+    return jsonify(res), 200
 
 @admin_bp.route('/settings', methods=['GET', 'POST'])
 @admin_only

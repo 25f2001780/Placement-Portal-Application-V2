@@ -23,7 +23,7 @@ def company_only(fn):
 def fetch_my_profile():
     current_uid = get_jwt_identity()
     u_record = User.query.get(current_uid)
-    profile_data = u_recorpdrive.company_profile
+    profile_data = u_record.company_profile
     return jsonify({
         "name": profile_data.name,
         "description": profile.description,
@@ -39,7 +39,7 @@ def fetch_my_profile():
 def edit_my_profile():
     current_uid = get_jwt_identity()
     u_record = User.query.get(current_uid)
-    profile_data = u_recorpdrive.company_profile
+    profile_data = u_record.company_profile
     
     # check for logo upload
     if request.content_type and 'multipart/form-data' in request.content_type:
@@ -71,7 +71,7 @@ def edit_my_profile():
 def load_all_drives():
     current_uid = get_jwt_identity()
     u_record = User.query.get(current_uid)
-    placements = PlacementDrive.query.filter_by(company_id=u_recorpdrive.company_profile_data.id).all()
+    placements = PlacementDrive.query.filter_by(company_id=u_record.company_profile.id).all()
     output_list = []
     for pdrive in placements:
         output_list.append({
@@ -102,7 +102,7 @@ def add_new_drive():
         return jsonify({"msg": "Deadline must be in future"}), 400
         
     new_drive = PlacementDrive(
-        company_id=u_recorpdrive.company_profile_data.id,
+        company_id=u_record.company_profile.id,
         job_title=data.get('job_title'),
         description=data.get('description'),
         package_lpa=data.get('package_lpa'),
@@ -122,7 +122,7 @@ def get_applications(id):
     u_record = User.query.get(current_uid)
     drive = PlacementDrive.query.get_or_404(id)
     
-    if drive.company_id != u_recorpdrive.company_profile_data.id:
+    if drive.company_id != u_record.company_profile.id:
         return jsonify({"msg": "Unauthorized"}), 403
         
     output_list = []
@@ -148,7 +148,7 @@ def update_app_status(id):
     u_record = User.query.get(current_uid)
     app = Application.query.get_or_404(id)
     
-    if app.drive.company_id != u_recorpdrive.company_profile_data.id:
+    if app.drive.company_id != u_record.company_profile.id:
         return jsonify({"msg": "Unauthorized"}), 403
         
     data = request.json
@@ -167,7 +167,7 @@ def generate_offer_letter(app_id):
     u_record = User.query.get(current_uid)
     app = Application.query.get_or_404(app_id)
 
-    if app.drive.company_id != u_recorpdrive.company_profile_data.id:
+    if app.drive.company_id != u_record.company_profile.id:
         return jsonify({"msg": "Unauthorized"}), 403
 
     if app.status != 'Selected':
