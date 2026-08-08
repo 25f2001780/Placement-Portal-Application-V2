@@ -69,7 +69,7 @@
           <div class="card p-4">
             <div v-if="driveMsg" class="alert alert-success">{{ driveMsg }}</div>
             <div v-if="driveErr" class="alert alert-danger">{{ driveErr }}</div>
-            <form @submit.prevent="createDrive">
+            <form @submit.prevent="addNewPlacement">
               <div class="row g-3">
                 <div class="col-md-6">
                   <label class="form-label">Job Title</label>
@@ -114,7 +114,7 @@
         <div v-if="currentTab === 'drives'">
           <div class="page-header d-flex justify-content-between align-items-center mb-4">
             <h3 class="m-0 fw-bold">My Placement Drives</h3>
-            <button class="btn btn-sm btn-outline-primary shadow-sm" @click="fetchDrives"><i class="bi bi-arrow-clockwise"></i> Refresh</button>
+            <button class="btn btn-sm btn-outline-primary shadow-sm" @click="getAllPlacements"><i class="bi bi-arrow-clockwise"></i> Refresh</button>
           </div>
           
           <div v-if="drives.length === 0" class="alert alert-info">You haven't created any drives yet.</div>
@@ -209,7 +209,7 @@
               <div class="card">
                 <div class="card-body p-4">
                   <h5 class="fw-bold mb-4 border-bottom pb-2">Profile Information</h5>
-                  <form @submit.prevent="updateProfile">
+                  <form @submit.prevent="saveMyData">
                     <div class="mb-3">
                       <label class="form-label">Company Name</label>
                       <input type="text" class="form-control" v-model="profile.name" required>
