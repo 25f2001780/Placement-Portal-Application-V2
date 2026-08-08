@@ -46,6 +46,9 @@ def edit_my_profile():
     
     # check if they are uploading files
     if request.content_type and 'multipart/form-data' in request.content_type:
+        print("MULTIPART REQUEST", flush=True)
+        print("FORM:", request.form, flush=True)
+        print("FILES:", request.files, flush=True)
         data = request.form
         BASE_DIR = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
         
@@ -71,11 +74,11 @@ def edit_my_profile():
     
     # update fields if they exist
     if data:
-        if 'name' in data: profile_data.name = data['name']
-        if 'branch' in data: profile_data.branch = data['branch']
-        if 'cgpa' in data: profile_data.cgpa = data['cgpa']
-        if 'year' in data: profile_data.year = data['year']
-        if 'resume_link' in data: profile_data.resume_link = data['resume_link']
+        if data.get('name') and data.get('name') not in ['null', 'undefined', '']: profile_data.name = data['name']
+        if data.get('branch') and data.get('branch') not in ['null', 'undefined', '']: profile_data.branch = data['branch']
+        if data.get('cgpa') and data.get('cgpa') not in ['null', 'undefined', '']: profile_data.cgpa = float(data['cgpa'])
+        if data.get('year') and data.get('year') not in ['null', 'undefined', '']: profile_data.year = int(data['year'])
+        if data.get('resume_link') and data.get('resume_link') not in ['null', 'undefined', '']: profile_data.resume_link = data['resume_link']
     
     db.session.commit()
     return jsonify({"msg": "Updated"}), 200

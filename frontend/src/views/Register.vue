@@ -24,19 +24,19 @@
             </div>
             
             <div class="row g-3">
+              <div class="col-12">
+                <label class="form-label">{{ form.role === 'company' ? 'Company Name' : 'Full Name' }}</label>
+                <input type="text" class="form-control" v-model="form.name" required>
+              </div>
+              
               <div class="col-md-6">
-                <label class="form-label">Email address</label>
+                <label class="form-label">{{ form.role === 'company' ? 'HR Email' : 'Email address' }}</label>
                 <input type="email" class="form-control" v-model="form.email" required>
               </div>
               
               <div class="col-md-6">
-                <label class="form-label">Phone Number</label>
+                <label class="form-label">{{ form.role === 'company' ? 'HR Phone' : 'Phone Number' }}</label>
                 <input type="text" class="form-control" v-model="form.phone" required pattern="[0-9+\-\s()]+" title="Valid phone number characters only">
-              </div>
-
-              <div class="col-12">
-                <label class="form-label">{{ form.role === 'company' ? 'Company Name' : 'Full Name' }}</label>
-                <input type="text" class="form-control" v-model="form.name" required>
               </div>
               
               <div class="col-md-6">
@@ -105,10 +105,6 @@
                 <div class="col-md-6">
                   <label class="form-label">HR Name</label>
                   <input type="text" class="form-control" v-model="form.hr_name" required>
-                </div>
-                <div class="col-md-6">
-                  <label class="form-label">HR Contact Email/Phone</label>
-                  <input type="text" class="form-control" v-model="form.hr_contact" required>
                 </div>
                 <div class="col-md-6">
                   <label class="form-label">Website</label>

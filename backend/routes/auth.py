@@ -72,7 +72,7 @@ def register():
             name=data.get('name'),
             description=data.get('description'),
             hr_name=data.get('hr_name'),
-            hr_contact=data.get('hr_contact'),
+            hr_contact=data.get('hr_contact') or data.get('phone') or email,
             website=data.get('website'),
             approved=False
         )

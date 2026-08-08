@@ -57,11 +57,11 @@ def edit_my_profile():
     
     # update info
     if data:
-        if 'name' in data: profile_data.name = data['name']
-        if 'description' in data: profile_data.description = data['description']
-        if 'hr_name' in data: profile_data.hr_name = data['hr_name']
-        if 'hr_contact' in data: profile_data.hr_contact = data['hr_contact']
-        if 'website' in data: profile_data.website = data['website']
+        if data.get('name') and data.get('name') not in ['null', 'undefined', '']: profile_data.name = data['name']
+        if data.get('description') and data.get('description') not in ['null', 'undefined', '']: profile_data.description = data['description']
+        if data.get('hr_name') and data.get('hr_name') not in ['null', 'undefined', '']: profile_data.hr_name = data['hr_name']
+        if data.get('hr_contact') and data.get('hr_contact') not in ['null', 'undefined', '']: profile_data.hr_contact = data['hr_contact']
+        if data.get('website') and data.get('website') not in ['null', 'undefined', '']: profile_data.website = data['website']
     
     db.session.commit()
     return jsonify({"msg": "Updated"}), 200

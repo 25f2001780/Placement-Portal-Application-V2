@@ -72,7 +72,7 @@
           <div class="page-header d-flex justify-content-between align-items-center mb-4">
             <h3 class="m-0 fw-bold">My Applications</h3>
             <div class="d-flex gap-2">
-              <button class="btn btn-sm btn-outline-success" @click="exportCSV" v-if="applications.length > 0" :disabled="exporting">
+              <button class="btn btn-sm btn-outline-success" @click="downloadStudentData" v-if="applications.length > 0" :disabled="exporting">
                 <span v-if="exporting" class="spinner-border spinner-border-sm me-1"></span>
                 <i v-else class="bi bi-file-earmark-spreadsheet me-1"></i> 
                 {{ exporting ? 'Exporting...' : 'Export CSV' }}
@@ -123,7 +123,7 @@
               <div class="card">
                 <div class="card-body p-4">
                   <h5 class="fw-bold mb-4 border-bottom pb-2">Profile Information</h5>
-                  <form @submit.prevent="updateProfile">
+                  <form @submit.prevent="saveMyData">
                     <div class="mb-3">
                       <label class="form-label">Full Name</label>
                       <input type="text" class="form-control" v-model="profile.name" required>
@@ -361,9 +361,7 @@ export default {
         if (this.photoFile) formData.append('photo', this.photoFile);
         if (this.resumeFile) formData.append('resume', this.resumeFile);
         
-        await axios.put('/api/student/profile', formData, {
-          headers: { 'Content-Type': 'multipart/form-data' }
-        });
+        await axios.put('/api/student/profile', formData);
         
         alert('Profile updated successfully!');
         this.photoFile = null;

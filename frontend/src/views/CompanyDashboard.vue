@@ -398,9 +398,7 @@ export default {
         
         if (this.logoFile) formData.append('logo', this.logoFile);
         
-        await axios.put('/api/company/profile', formData, {
-          headers: { 'Content-Type': 'multipart/form-data' }
-        });
+        await axios.put('/api/company/profile', formData);
         
         alert('Profile updated successfully!');
         this.logoFile = null;

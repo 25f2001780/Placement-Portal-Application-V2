@@ -39,39 +39,57 @@
           <!-- stats grid -->
           <div class="row g-4 mb-4">
             <div class="col-md-4 col-lg-2">
-              <div class="card stat-card">
-                <h2 class="text-primary">{{ stats.total_students }}</h2>
-                <p>Students</p>
+              <div class="stat-card">
+                <div class="info">
+                  <h3>{{ stats.total_students }}</h3>
+                  <p>Students</p>
+                </div>
+                <div class="icon"><i class="bi bi-people"></i></div>
               </div>
             </div>
             <div class="col-md-4 col-lg-2">
-              <div class="card stat-card">
-                <h2 class="text-success">{{ stats.total_companies }}</h2>
-                <p>Companies</p>
+              <div class="stat-card">
+                <div class="info">
+                  <h3>{{ stats.total_companies }}</h3>
+                  <p>Companies</p>
+                </div>
+                <div class="icon"><i class="bi bi-building"></i></div>
               </div>
             </div>
             <div class="col-md-4 col-lg-2">
-              <div class="card stat-card">
-                <h2 class="text-info">{{ stats.approved_companies }}</h2>
-                <p>Approved Co.</p>
+              <div class="stat-card">
+                <div class="info">
+                  <h3>{{ stats.approved_companies }}</h3>
+                  <p>Approved Co.</p>
+                </div>
+                <div class="icon"><i class="bi bi-check-circle"></i></div>
               </div>
             </div>
             <div class="col-md-4 col-lg-2">
-              <div class="card stat-card">
-                <h2 class="text-warning">{{ stats.total_drives }}</h2>
-                <p>Drives</p>
+              <div class="stat-card">
+                <div class="info">
+                  <h3>{{ stats.total_drives }}</h3>
+                  <p>Drives</p>
+                </div>
+                <div class="icon"><i class="bi bi-briefcase"></i></div>
               </div>
             </div>
             <div class="col-md-4 col-lg-2">
-              <div class="card stat-card">
-                <h2 class="text-secondary">{{ stats.total_applications }}</h2>
-                <p>Applications</p>
+              <div class="stat-card">
+                <div class="info">
+                  <h3>{{ stats.total_applications }}</h3>
+                  <p>Applications</p>
+                </div>
+                <div class="icon"><i class="bi bi-file-earmark-text"></i></div>
               </div>
             </div>
             <div class="col-md-4 col-lg-2">
-              <div class="card stat-card">
-                <h2 class="text-success">{{ stats.selected_students }}</h2>
-                <p>Selected</p>
+              <div class="stat-card">
+                <div class="info">
+                  <h3>{{ stats.selected_students }}</h3>
+                  <p>Selected</p>
+                </div>
+                <div class="icon"><i class="bi bi-trophy"></i></div>
               </div>
             </div>
           </div>
@@ -353,17 +371,6 @@
                 <p class="fw-bold">{{ selectedCompany.phone || 'N/A' }}</p>
               </div>
               
-              <!-- hr details -->
-              <div class="col-md-6">
-                <p class="mb-1 text-muted small">HR Name</p>
-                <p class="fw-bold">{{ selectedCompany.hr_name || 'N/A' }}</p>
-              </div>
-              <div class="col-md-6">
-                <p class="mb-1 text-muted small">HR Contact Details</p>
-                <p class="fw-bold">{{ selectedCompany.hr_contact || 'N/A' }}</p>
-              </div>
-              
-              <!-- extra info -->
               <div class="col-md-6">
                 <p class="mb-1 text-muted small">Website</p>
                 <p class="fw-bold">
