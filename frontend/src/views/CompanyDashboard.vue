@@ -186,9 +186,7 @@
                               <option value="Selected">Selected</option>
                               <option value="Rejected">Rejected</option>
                             </select>
-                            <a v-if="app.status === 'Selected'" :href="'/api/company/offer-letter/' + app.application_id" target="_blank" class="btn btn-sm btn-outline-success py-0 px-2">
-                              <i class="bi bi-file-earmark-text"></i> Offer Letter
-                            </a>
+
                           </div>
                         </td>
                       </tr>
