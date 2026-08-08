@@ -98,7 +98,10 @@
                     <td colspan="5" class="text-center py-4 text-muted">You haven't applied to any drives yet.</td>
                   </tr>
                   <tr v-for="app in applications" :key="app.id">
-                    <td class="fw-bold">{{ app.company_name }}</td>
+                    <td class="fw-bold">
+                      {{ app.company_name }}
+                      <div v-if="app.warning" class="text-danger small fw-normal mt-1"><i class="bi bi-exclamation-triangle"></i> {{ app.warning }}</div>
+                    </td>
                     <td>{{ app.job_title }}</td>
                     <td>{{ app.package_lpa || '-' }}</td>
                     <td>{{ app.application_date }}</td>

@@ -13,9 +13,9 @@ from celery.schedules import crontab
 celery_app = Celery('ppa_tasks', broker='redis://localhost:6379/0', backend='redis://localhost:6379/0')
 
 celery_app.conf.beat_schedule = {
-    'hourly-schedule-check': {
+    'minutely-schedule-check': {
         'task': 'tasks.celery_tasks.check_schedules',
-        'schedule': crontab(minute=0), # runs every hour on the hour
+        'schedule': crontab(minute='*'), # runs every minute
     }
 }
 celery_app.conf.timezone = 'UTC'
@@ -33,22 +33,25 @@ def check_schedules():
         settings = json.load(f)
         
     now = datetime.now()
-    current_hour = now.hour
     current_day = now.day
+    current_time_str = now.strftime('%H:%M')
     current_month_str = now.strftime('%Y-%m')
     current_day_str = now.strftime('%Y-%m-%d')
     
     updates_made = False
     
     # Check Reminders
-    if current_hour == int(settings.get('reminder_hour', 9)):
+    reminder_time = settings.get('reminder_time', '09:00')
+    if current_time_str == reminder_time:
         if settings.get('last_reminder_day') != current_day_str:
-            daily_reminders.delay()
+            daily_reminders.delay(force=True)
             settings['last_reminder_day'] = current_day_str
             updates_made = True
             
     # Check Monthly Report
-    if current_day == int(settings.get('report_day', 1)) and current_hour == int(settings.get('report_hour', 10)):
+    report_day = int(settings.get('report_day', 1))
+    report_time = settings.get('report_time', '10:00')
+    if current_day == report_day and current_time_str == report_time:
         if settings.get('last_report_month') != current_month_str:
             monthly_report.delay()
             settings['last_report_month'] = current_month_str
@@ -122,6 +125,12 @@ def daily_reminders(force=False):
 
         reminder_log = []
         emails_to_send = []  # list of (student_email, student_name, drive info)
+
+        # Filter out drives from companies that are blocked or unapproved
+        upcoming_drives = [
+            d for d in upcoming_drives
+            if d.company.approved and d.company.user.active
+        ]
 
         for drive in upcoming_drives:
             applied_student_ids = {a.student_id for a in drive.applications}

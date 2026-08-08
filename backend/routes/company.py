@@ -5,6 +5,7 @@ from functools import wraps
 from datetime import datetime
 import os
 from werkzeug.utils import secure_filename
+from extensions import cache
 
 company_bp = Blueprint('company', __name__)
 
@@ -15,6 +16,17 @@ def company_only(fn):
         claims = get_jwt()
         if claims.get('role') != 'company':
             return jsonify({"msg": "Company access required"}), 403
+            
+        # Verify user is still active and approved
+        uid = get_jwt_identity()
+        user = User.query.get(uid)
+        if not user:
+            return jsonify({"msg": "User not found"}), 401
+        if not user.active:
+            return jsonify({"msg": "User account is disabled"}), 403
+        if user.company_profile and not user.company_profile.approved:
+            return jsonify({"msg": "Company account not approved yet"}), 403
+            
         return fn(*args, **kwargs)
     return wrapper
 
@@ -84,7 +96,7 @@ def load_all_drives():
             "cgpa_cutoff": pdrive.cgpa_cutoff,
             "application_deadline": pdrive.application_deadline.strftime('%Y-%m-%d') if pdrive.application_deadline else None,
             "status": pdrive.status,
-            "applicant_count": len(pdrive.applications)
+            "applicant_count": len(pdrive.applications) if pdrive.status == 'Approved' else 0
         })
     return jsonify(output_list), 200
 
@@ -113,6 +125,11 @@ def add_new_drive():
     )
     db.session.add(new_drive)
     db.session.commit()
+    
+    if cache:
+        for k in ['admin_stats', 'admin_drives', 'admin_analytics']:
+            cache.delete(k)
+            
     return jsonify({"msg": "Drive created"}), 201
 
 @company_bp.route('/drives/<int:id>/applications', methods=['GET'])
@@ -126,6 +143,11 @@ def get_applications(id):
         return jsonify({"msg": "Unauthorized"}), 403
         
     output_list = []
+    
+    # Hide applicants if the drive is not approved by admin
+    if drive.status != 'Approved':
+        return jsonify(output_list), 200
+
     for app in drive.applications:
         s = app.student
         output_list.append({

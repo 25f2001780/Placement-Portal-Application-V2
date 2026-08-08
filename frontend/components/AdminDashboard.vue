@@ -321,16 +321,16 @@
                     <div class="input-group">
                       <span class="input-group-text bg-light text-muted">Day</span>
                       <input type="number" class="form-control" v-model="settingsForm.report_day" min="1" max="28" required>
-                      <span class="input-group-text bg-light text-muted">Hour</span>
-                      <input type="number" class="form-control" v-model="settingsForm.report_hour" min="0" max="23" required>
+                      <span class="input-group-text bg-light text-muted">Time</span>
+                      <input type="time" class="form-control" v-model="settingsForm.report_time" required>
                     </div>
                   </div>
                   
                   <div class="mb-4">
                     <label class="form-label fw-bold small">Daily Student Reminders</label>
                     <div class="input-group">
-                      <span class="input-group-text bg-light text-muted">Hour</span>
-                      <input type="number" class="form-control" v-model="settingsForm.reminder_hour" min="0" max="23" required>
+                      <span class="input-group-text bg-light text-muted">Time</span>
+                      <input type="time" class="form-control" v-model="settingsForm.reminder_time" required>
                     </div>
                   </div>
                   
@@ -596,7 +596,7 @@ export default {
       loadingApps: false,
       analyticsData: null,
       chartInstances: {},
-      settingsForm: { report_day: 1, report_hour: 10, reminder_hour: 9 },
+      settingsForm: { report_day: 1, report_time: '10:00', reminder_time: '09:00' },
       triggeringReport: false,
       triggeringReminders: false,
       savingSettings: false
@@ -637,7 +637,17 @@ export default {
     async fetchSettings() {
       try {
         const res = await axios.get('/api/admin/settings');
-        if (res.data.report_day !== undefined) this.settingsForm = res.data;
+        if (res.data.report_day !== undefined) {
+          let data = res.data;
+          // Migrate old integer hours to HH:MM strings if needed
+          if (data.report_hour !== undefined && !data.report_time) {
+            data.report_time = data.report_hour.toString().padStart(2, '0') + ':00';
+          }
+          if (data.reminder_hour !== undefined && !data.reminder_time) {
+            data.reminder_time = data.reminder_hour.toString().padStart(2, '0') + ':00';
+          }
+          this.settingsForm = data;
+        }
       } catch (err) { console.error(err); }
     },
     

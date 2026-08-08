@@ -15,6 +15,12 @@ def admin_only(fn):
         claims = get_jwt()
         if claims.get('role') != 'admin':
             return jsonify({"msg": "Admin access required"}), 403
+            
+        uid = get_jwt_identity()
+        user = User.query.get(uid)
+        if not user or not user.active:
+            return jsonify({"msg": "Admin account disabled"}), 403
+            
         return fn(*args, **kwargs)
     return wrapper
 
@@ -319,6 +325,10 @@ def manage_settings():
     
     if request.method == 'POST':
         data = request.json
+        # Clear the execution trackers so changing the schedule allows it to run again today
+        data.pop('last_reminder_day', None)
+        data.pop('last_report_month', None)
+        
         with open(settings_path, 'w') as f:
             json.dump(data, f)
         return jsonify({"msg": "Settings saved successfully"}), 200

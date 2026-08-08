@@ -7,6 +7,7 @@ import os
 import csv
 import io
 from werkzeug.utils import secure_filename
+from extensions import cache
 
 student_bp = Blueprint('student', __name__)
 
@@ -18,6 +19,14 @@ def student_only(fn):
         claims = get_jwt()
         if claims.get('role') != 'student':
             return jsonify({"msg": "Student access required"}), 403
+            
+        uid = get_jwt_identity()
+        user = User.query.get(uid)
+        if not user:
+            return jsonify({"msg": "User not found"}), 401
+        if not user.active:
+            return jsonify({"msg": "User account is disabled"}), 403
+            
         return fn(*args, **kwargs)
     return wrapper
 
@@ -110,6 +119,10 @@ def load_all_drives():
         # skip drives the student isn't eligible for
         if not eligible:
             continue
+            
+        # skip drives if the company is unapproved or banned
+        if not pdrive.company.approved or not pdrive.company.user.active:
+            continue
 
         applied = any(a.student_id == profile_data.id for a in pdrive.applications)
 
@@ -159,6 +172,11 @@ def submit_application(id):
     app = Application(student_id=profile_data.id, drive_id=id)
     db.session.add(app)
     db.session.commit()
+    
+    if cache:
+        for k in ['admin_stats', 'admin_analytics', 'admin_drives']:
+            cache.delete(k)
+            
     return jsonify({"msg": "Applied successfully"}), 201
 
 @student_bp.route('/applications', methods=['GET'])
@@ -170,13 +188,22 @@ def fetch_my_applications():
     
     output_list = []
     for app in apps:
+        warning = None
+        if app.drive.status != 'Approved':
+            warning = "Drive Unapproved"
+        elif not app.drive.company.approved:
+            warning = "Company Unapproved"
+        elif not app.drive.company.user.active:
+            warning = "Company Banned"
+            
         output_list.append({
             "id": app.id,
             "company_name": app.drive.company.name,
             "job_title": app.drive.job_title,
             "package_lpa": app.drive.package_lpa,
             "status": app.status,
-            "application_date": app.application_date.strftime('%Y-%m-%d')
+            "application_date": app.application_date.strftime('%Y-%m-%d'),
+            "warning": warning
         })
     return jsonify(output_list), 200
 
