@@ -62,7 +62,7 @@ def check_schedules():
 
 @celery_app.task
 def export_student_history_csv(student_profile_id):
-    # export student apps to csv
+    # export student apps to csv and return content directly in result
     sys.path.insert(0, BASE_DIR)
     from app import create_app
     app = create_app()
@@ -92,14 +92,9 @@ def export_student_history_csv(student_profile_id):
                 a.application_date.strftime('%Y-%m-%d')
             ])
 
-        BASE_DIR = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
-        filename = f"student_{student_profile_id}_applications_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
-        filepath = os.path.join(BASE_DIR, 'uploads', filename)
-        
-        with open(filepath, 'w', newline='', encoding='utf-8') as f:
-            f.write(output.getvalue())
-
-        return {"filepath": f"/uploads/{filename}", "filename": filename}
+        filename = f"applications_{student.name.replace(' ', '_')}_{datetime.now().strftime('%Y%m%d')}.csv"
+        # return csv content directly — frontend builds the blob
+        return {"csv_content": output.getvalue(), "filename": filename}
 
 
 @celery_app.task

@@ -174,36 +174,29 @@ def get_applications():
         })
     return jsonify(res), 200
 
-@student_bp.route('/export-csv', methods=['GET'])
+@student_bp.route('/export-csv', methods=['POST'])
 @student_only
 def export_csv():
-    # generate and return csv directly — no celery needed
+    # queue async celery job
     identity = get_jwt_identity()
     user = User.query.get(identity)
     profile = user.student_profile
 
-    apps = Application.query.filter_by(student_id=profile.id).all()
+    from tasks.celery_tasks import export_student_history_csv
+    task = export_student_history_csv.delay(profile.id)
+    return jsonify({"task_id": task.id}), 202
 
-    output = io.StringIO()
-    writer = csv.writer(output)
-    writer.writerow(['Application ID', 'Company Name', 'Job Title', 'Package (LPA)', 'Location', 'Status', 'Application Date'])
+@student_bp.route('/export-csv/status/<task_id>', methods=['GET'])
+@student_only
+def export_csv_status(task_id):
+    from tasks.celery_tasks import celery_app
+    task = celery_app.AsyncResult(task_id)
 
-    for a in apps:
-        writer.writerow([
-            a.id,
-            a.drive.company.name,
-            a.drive.job_title,
-            a.drive.package_lpa or 'N/A',
-            a.drive.location or 'N/A',
-            a.status,
-            a.application_date.strftime('%Y-%m-%d')
-        ])
-
-    output.seek(0)
-    filename = f"applications_{profile.name.replace(' ', '_')}_{datetime.now().strftime('%Y%m%d')}.csv"
-
-    return Response(
-        output.getvalue(),
-        mimetype='text/csv',
-        headers={'Content-Disposition': f'attachment; filename="{filename}"'}
-    )
+    if task.state == 'PENDING':
+        return jsonify({"state": "PENDING", "status": "Waiting for worker..."}), 200
+    elif task.state == 'SUCCESS':
+        return jsonify({"state": "SUCCESS", "result": task.result}), 200
+    elif task.state == 'FAILURE':
+        return jsonify({"state": "FAILURE", "status": str(task.info)}), 500
+    else:
+        return jsonify({"state": task.state, "status": "In progress..."}), 200

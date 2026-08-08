@@ -427,31 +427,54 @@ export default {
       if (status === 'Rejected') return 'bg-danger';
       return 'bg-secondary';
     },
-    // download csv file directly from backend
+    // queue celery job then poll until done
     async exportCSV() {
       this.exporting = true;
       try {
-        // use axios so JWT header is included, get back as blob
-        const res = await axios.get('/api/student/export-csv', { responseType: 'blob' });
+        // trigger the async task
+        const res = await axios.post('/api/student/export-csv');
+        const taskId = res.data.task_id;
 
-        // create a temporary download link and click it
-        const url = window.URL.createObjectURL(new Blob([res.data]));
-        const link = document.createElement('a');
-        link.href = url;
-        const disposition = res.headers['content-disposition'];
-        const filename = disposition
-          ? disposition.split('filename=')[1].replace(/"/g, '')
-          : 'applications.csv';
-        link.setAttribute('download', filename);
-        document.body.appendChild(link);
-        link.click();
-        link.remove();
-        window.URL.revokeObjectURL(url);
+        // poll every 2 seconds for result
+        const poll = setInterval(async () => {
+          try {
+            const statusRes = await axios.get(`/api/student/export-csv/status/${taskId}`);
+            const state = statusRes.data.state;
+
+            if (state === 'SUCCESS') {
+              clearInterval(poll);
+              this.exporting = false;
+
+              // build a blob from the csv string returned by the task
+              const csvContent = statusRes.data.result.csv_content;
+              const filename = statusRes.data.result.filename || 'applications.csv';
+              const blob = new Blob([csvContent], { type: 'text/csv' });
+              const url = window.URL.createObjectURL(blob);
+              const link = document.createElement('a');
+              link.href = url;
+              link.setAttribute('download', filename);
+              document.body.appendChild(link);
+              link.click();
+              link.remove();
+              window.URL.revokeObjectURL(url);
+
+            } else if (state === 'FAILURE') {
+              clearInterval(poll);
+              this.exporting = false;
+              alert('Export failed. Please try again.');
+            }
+            // PENDING / STARTED — keep polling
+          } catch (e) {
+            clearInterval(poll);
+            this.exporting = false;
+            console.error('Polling error', e);
+          }
+        }, 2000);
+
       } catch (err) {
-        alert('Failed to export CSV. Make sure you have applications first.');
-        console.error(err);
-      } finally {
         this.exporting = false;
+        alert('Failed to start export. Make sure the Celery worker is running.');
+        console.error(err);
       }
     }
   }
