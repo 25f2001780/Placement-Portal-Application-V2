@@ -131,6 +131,7 @@ def get_applications(id):
         output_list.append({
             "application_id": app.id,
             "student_name": s.name,
+            "email": s.user.email,
             "branch": s.branch,
             "cgpa": s.cgpa,
             "resume_link": s.resume_link,

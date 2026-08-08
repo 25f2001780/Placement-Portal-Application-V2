@@ -294,6 +294,7 @@
             
             <div style="text-align: left; margin-top: 15px;">
               <ul>
+                <li><strong>Email:</strong> {{ selectedStudent.email || 'N/A' }}</li>
                 <li><strong>Branch:</strong> {{ selectedStudent.branch || 'N/A' }}</li>
                 <li><strong>CGPA:</strong> {{ selectedStudent.cgpa || 'N/A' }}</li>
                 <li><strong>Applied On:</strong> {{ selectedStudent.application_date }}</li>
